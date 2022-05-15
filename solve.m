@@ -15,7 +15,7 @@ u = states_list(4,1:end-1);
 v = states_list(5,1:end-1);
 r = states_list(6,1:end-1);
 w = states_list(7,1:end-1); %not used
-
+dt = 0.01;
 delta = inputs_list(2,:);
 T = inputs_list(1,:);    %not used
 
