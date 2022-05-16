@@ -74,3 +74,7 @@ title('Rear')
 xlabel('Slip Angle');
 ylabel('F_y');
 hold off;
+
+
+
+
