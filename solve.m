@@ -58,23 +58,71 @@ v_wr = v_r;
 % Find slip angles
 alphaf = atan(v_wf./sqrt((u_wf).^2 +0.05));
 alphar = atan(v_wr./sqrt((u_wr).^2 +0.05));
+% Find lateral forces
 F_ywf=(lr.*m.*(vdot+u.*r)+rdot*Izz-(lf+lr)*sin(delta).*F_xfw)./((lf+lr).*cos(delta));
 F_yr=(m*(vdot+u.*r)-rdot*Izz/lf)./(1+lr/lf);
+% Plot the data
 figure(1);
 hold on;
 scatter(alphaf, F_ywf);
 title('Front');
 xlabel('Slip Angle');
 ylabel('F_y');
-hold off;
-hold on;
 figure(2);
+hold on;
 scatter(alphar, F_yr);
 title('Rear')
 xlabel('Slip Angle');
 ylabel('F_y');
-hold off;
-
-
-
-
+% Sort the data
+[alphafSorted, If] = sort(alphaf);
+F_ywfSorted = F_ywf(If);
+[alpharSorted, Ir] = sort(alphar);
+F_yrSorted = F_yr(Ir);
+% Only take half of the data for analysis
+alphaf1 = alphafSorted(1:2:end);
+alphaf2 = alphafSorted(2:2:end);
+F_ywf1 = F_ywfSorted(1:2:end);
+F_ywf2 = F_ywfSorted(2:2:end);
+alphar1 = alpharSorted(1:2:end);
+alphar2 = alpharSorted(2:2:end);
+F_yr1 = F_yrSorted(1:2:end);
+F_yr2 = F_yrSorted(2:2:end);
+% Select and fit a curve to the data in the linear region for the front 
+alphafSelected = alphaf1(abs(alphaf1)<0.1);
+F_ywfSelected = F_ywf1(abs(alphaf1)<0.1);
+fLinearCoef = polyfit(alphafSelected, F_ywfSelected, 1);
+fLinear = @(t) fLinearCoef(1)*t+fLinearCoef(2);
+figure(1);
+t = -0.5:0.01:0.5;
+plot(t, fLinear(t));
+xlim([-2,2]);
+ylim([-6000, 6000]);
+% Select and fit a curve to the data in the linear region for the rear
+alpharSelected = alphar1(abs(alphar1)<0.1);
+F_yrSelected = F_yr1(abs(alphar1)<0.1);
+rLinearCoef = polyfit(alpharSelected, F_yrSelected, 1);
+rLinear = @(t) rLinearCoef(1)*t+rLinearCoef(2);
+figure(2);
+t = -0.5:0.01:0.5;
+plot(t, rLinear(t));
+xlim([-2,2]);
+ylim([-6000, 6000]);
+% Nonlinear curve for the front
+% F = C1tanh(C2*alpha)
+% x = [C1 C2 alpha]
+Nonlinear = @(x,xdata)x(1)*tanh(x(2)*xdata);
+x0 = [1 1];
+[fNonlinearCoef,resnorm,~,exitflag,output]=lsqcurvefit(Nonlinear, x0, alphaf1, F_ywf1);
+fNonLinearCurve = @(x) fNonlinearCoef(1)*tanh(fNonlinearCoef(2)*x);
+figure(1);
+t=-2:0.01:2;
+plot(t, fNonLinearCurve(t));
+legend('Data', 'Linear','Nonlinear');
+% Nonlinear curve for the rear
+[rNonlinearCoef,resnorm,~,exitflag,output]=lsqcurvefit(Nonlinear, x0, alphar1, F_yr1);
+rNonLinearCurve = @(x) rNonlinearCoef(1)*tanh(rNonlinearCoef(2)*x);
+figure(2);
+t=-2:0.01:2;
+plot(t, rNonLinearCurve(t));
+legend('Data','Linear','Nonlinear');
